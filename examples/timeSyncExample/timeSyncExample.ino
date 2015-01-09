@@ -16,18 +16,27 @@ void setup() {
   debugSerial.begin(38400);
   if(esp8266_ntp.initialize(WIFI_SSID, WIFI_PASS) == 0) {
     debugSerial.println("Initialized!");
+    esp8266_ntp.setGMTOffset(1); //GMT+1
   }
+  //set the sync provider
+  setSyncProvider(getNtpTime);
+  setSyncInterval(10);
+}
+
+//sync provider
+time_t getNtpTime() {
+  //switch offset every sync, so that we can se that a sync happened
+  if(offset == 1) {
+    offset = 2;
+  } else {
+    offset = 1;
+  }
+  esp8266_ntp.setGMTOffset(offset);
+  return esp8266_ntp.getTime();
 }
 
 void loop() {
-  if(offset == 0) {
-    offset=1;
-  } else {
-    offset = 0;
-  }
-  esp8266_ntp.setGMTOffset(offset);
-  time_t ntptime = esp8266_ntp.getTime();
-  setTime(ntptime);
+  //just print the time, not nice but works ;-)
   String time;
   time.concat(hour()); time.concat(":"); time.concat(minute()); time.concat(":"); time.concat(second()); time.concat(" ");
   time.concat(day()); time.concat("."); time.concat(month()); time.concat("."); time.concat(year());

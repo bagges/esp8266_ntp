@@ -16,7 +16,7 @@ class ESP8266_NTP
     ESP8266_NTP();
     int initialize(char* WIFI_SSID, char* WIFI_PASS);
     time_t getTime();
-    void setGMTOffset(int offset);
+    void setGMTOffset(const int offset);
   private:
     int gmtOffset;
 };

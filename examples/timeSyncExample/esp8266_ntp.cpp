@@ -2,6 +2,9 @@
 #include <Time.h>
 #include "esp8266_ntp.h"
 
+#define CONST_OK "OK"
+#define CONST_AT "AT"
+
 ESP8266_NTP::ESP8266_NTP() {
 }
 
@@ -9,17 +12,16 @@ int ESP8266_NTP::initialize(char* WIFI_SSID, char* WIFI_PASS) {
   gmtOffset = 0;
   String command;
   String result;
-  char character;
   Serial.begin(DEVICE_SERIAL_BAUD);
   Serial.setTimeout(5000);
-  Serial.println("AT");
-  if(!Serial.find("OK")) {
+  Serial.println(CONST_AT);
+  if(!Serial.find(CONST_OK)) {
     //could not open device
     return DEVICE_NOT_FOUND;
   }
   
   Serial.println("AT+CWMODE=1");
-  if(!Serial.find("OK")) {
+  if(!Serial.find(CONST_OK)) {
     return MODE_CHANGE_FAILED;
   }
   
@@ -36,12 +38,14 @@ int ESP8266_NTP::initialize(char* WIFI_SSID, char* WIFI_PASS) {
   return 0;
 }
 
-void ESP8266_NTP::setGMTOffset(int offset) {
+void ESP8266_NTP::setGMTOffset(const int offset) {
   gmtOffset = offset;
 }
 
 time_t ESP8266_NTP::getTime() {
-  Serial.println("AT+CIPNTP=" + gmtOffset);
+  String command = "AT+CIPNTP=";
+  command.concat(gmtOffset);
+  Serial.println(command);
   delay(1000);
   while(Serial.available()) { //clear buffer
     Serial.read();
@@ -53,19 +57,13 @@ time_t ESP8266_NTP::getTime() {
     if(result.length() == 26) {
       char timeArray[26];
       result.toCharArray(timeArray, 26);
-      int _hour = ((timeArray[0] - '0') * 10) + ((timeArray[1] - '0') << 0);
-      int _minute = ((timeArray[3] - '0') *10) + ((timeArray[4] - '0') << 0);
-      int _second = ((timeArray[6] - '0') *10) + ((timeArray[7] - '0') << 0);
-      int _month = ((timeArray[9] - '0') *10) + ((timeArray[10] - '0') << 0);
-      int _day = ((timeArray[12] - '0') *10) + ((timeArray[13] - '0') << 0);
-      int _year = ((timeArray[15] - '0') *1000) + ((timeArray[16] - '0') *100) + ((timeArray[17] - '0') *10) + ((timeArray[18] - '0') << 0);
       tmElements_t tm;
-      tm.Second = _second; 
-      tm.Hour = _hour;
-      tm.Minute = _minute;
-      tm.Day = _day;
-      tm.Month = _month;
-      tm.Year = _year - 1970;
+      tm.Hour = ((timeArray[0] - '0') * 10) + (timeArray[1] - '0');
+      tm.Minute = ((timeArray[3] - '0') *10) + (timeArray[4] - '0');
+      tm.Second = ((timeArray[6] - '0') *10) + (timeArray[7] - '0');
+      tm.Month = ((timeArray[9] - '0') *10) + (timeArray[10] - '0');
+      tm.Day = ((timeArray[12] - '0') *10) + (timeArray[13] - '0');
+      tm.Year = ((timeArray[15] - '0') *1000) + ((timeArray[16] - '0') *100) + ((timeArray[17] - '0') *10) + (timeArray[18] - '0') - 1970;
       return makeTime(tm);
     }
   }
