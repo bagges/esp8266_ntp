@@ -96,9 +96,12 @@ time_t ESP8266_NTP::getTime() {
       tm.Day = ((timeArray[12] - '0') *10) + (timeArray[13] - '0');
       tm.Year = ((timeArray[15] - '0') *1000) + ((timeArray[16] - '0') *100) + ((timeArray[17] - '0') *10) + (timeArray[18] - '0') - 1970;
       return makeTime(tm);
-    }
+	} else {
+      return 0;
+	}
   }
   while(Serial.available()) {
     Serial.read();
   }
+  return 0;
 }
